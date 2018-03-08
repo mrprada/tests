@@ -1,0 +1,25 @@
+- hosts: all
+  tasks:
+        - name: Installing Filebeat version 6.1.3 and save default config as filebeat.yml.old
+          shell: sudo touch /etc/yum.repos.d/elastic_for_filebeat.repo ;echo -e "[elasticsearch-6.x]\nname=Elasticsearch repository for 6.x packages\nbaseurl=https://artifacts.elastic.co/packages/6.x/yum\ngpgcheck=1\ngpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch\nenabled=1\nautorefresh=1\ntype=rpm-md" > /etc/yum.repos.d/elastic_for_filebeat.repo; sudo dnf install -y filebeat-6.1.3 ; sudo cp /etc/filebeat/filebeat.yml /etc/filebeat/filebeat.yml.default ;
+          become: true
+          become_user: root
+
+        - name: Clearing filebeat configuration file
+          shell: sudo echo "" > /etc/filebeat/filebeat.yml;
+          become: true
+          become_user: root
+
+        - name: Creating configuration for host filebeat
+          shell: sudo echo -e ' \n 'filebeat.config.modules:' \n 'path:' ${path.config}/modules.d/*.yml \n 'reload.enabled:' false \n 'setup.template.settings:' \n 'index.number_of_shards:' 3 \n 'setup.kibana:' \n 'output.logstash:' \n 'hosts:' ["10.100.0.54:5050"] \n' > /etc/filebeat/filebeat.yml
+          become: true
+          become_user:
+          root ignore_errors: True
+
+        - name: Build filebeat.prospector
+          shell: customer_logpath=($(cat ps.txt |tr " " "\n" |grep "config.default.filepath"|sed 's/.*path=\(.*\)$/\1/g' |sed 's/conf.*/ /g'));
+                 customer_name=($(cat ps.txt |tr " " "\n" |grep "config.default.filepath"|sed 's/.*clients\(.*\)$/\1/g'|sed 's@/@ @g'|awk '{print $1}'));
+                 done
+          become: true
+          become_user: root
+
